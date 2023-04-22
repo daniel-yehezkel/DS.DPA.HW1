@@ -1,32 +1,33 @@
 import glob
 import pandas as pd
-
+import numpy as np
 
 def load_patient(path):
     pdf = pd.read_csv(path, delimiter='|')
     label = int(len(pdf[pdf['SepsisLabel'] == 1]) > 0)
     
-    if label:
-        result = (pdf[pdf['SepsisLabel'] == 1]).iloc[0]
-    else:
-        result = pdf.iloc[-1]
-
-    return result.fillna(0)
     # if label:
-    #     result = pd.concat((pdf[pdf['SepsisLabel'] == 0],  (pdf[pdf['SepsisLabel'] == 1]).iloc[0]))
+    #     result = (pdf[pdf['SepsisLabel'] == 1]).iloc[0]
     # else:
-    #     result = pdf
+    #     result = pdf.iloc[-1]
 
-    # sample_dict = {}
-    # for col in result.columns:
-    #     col_res = result[col].dropna()
-    #     if len(col_res) > 0:
-    #         value = col_res.iloc[-1]
-    #     else:
-    #         value = 0
-    #     sample_dict[col] = value
+    # return result.fillna(0)
 
-    # return pd.Series(sample_dict).fillna(0)
+    if label:
+        result = pd.concat((pdf[pdf['SepsisLabel'] == 0],  (pdf[pdf['SepsisLabel'] == 1]).iloc[0].to_frame().transpose()))
+    else:
+        result = pdf
+
+    sample_dict = {}
+    for col in result.columns:
+        col_res = result[col].dropna()
+        if len(col_res) > 0:
+            value = col_res.iloc[-1]
+        else:
+            value = 0
+        sample_dict[col] = value
+
+    return pd.Series(sample_dict).fillna(0)
 
 def load_folder(path):
       patients_file_path = glob.glob(f"{path}/*")
@@ -46,14 +47,36 @@ def load_folder(path):
 def main():
     train_X, train_y = load_folder('data/train')
     test_X, test_y = load_folder('data/test')
-    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.svm import SVC
     from sklearn.metrics import f1_score
     
-    model = RandomForestClassifier()
-    model.fit(train_X, train_y)
-    pred_test = model.predict(test_X)
+    models = [
+        # RandomForestClassifier(),
+        # GradientBoostingClassifier(),
+        AdaBoostClassifier(), 
+        # KNeighborsClassifier(),
+        # LogisticRegression(),
+        # SVC()
+        ]
+    
+    preds = []
+    for model in models:
+        model.fit(train_X, train_y)
+        pred_test = model.predict(test_X).reshape(-1, 1)
+        preds.append(pred_test)
+    
+    preds = np.hstack(preds).astype('int64')
 
-    score = f1_score(test_y, pred_test)
+    total_pred = []
+    for i in range(len(preds)):
+        curr_pred = np.bincount(preds[i]).argmax()
+        total_pred.append(curr_pred)
+
+    total_pred = np.array(total_pred)
+    score = f1_score(test_y, total_pred)
     print(score)
 
 if __name__ == "__main__":
