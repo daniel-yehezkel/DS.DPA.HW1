@@ -44,8 +44,17 @@ def load_folder(path):
 
       return X, y
 
-def main():
+def main(n):
     train_X, train_y = load_folder('data/train')
+    
+    logic = train_y == 1
+
+    new_X = [train_X] + [train_X[logic].copy() for _ in range (n)]
+    new_y = [train_y] + [train_y[logic].copy() for _ in range (n)]
+
+    train_X = pd.concat(new_X)
+    train_y = pd.concat(new_y)
+
     test_X, test_y = load_folder('data/test')
     from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, AdaBoostClassifier
     from sklearn.neighbors import KNeighborsClassifier
@@ -54,13 +63,13 @@ def main():
     from sklearn.metrics import f1_score
     
     models = [
-        # RandomForestClassifier(),
-        # GradientBoostingClassifier(),
+        RandomForestClassifier(),
+        GradientBoostingClassifier(),
         AdaBoostClassifier(), 
         # KNeighborsClassifier(),
         # LogisticRegression(),
         # SVC()
-        ]
+    ]
     
     preds = []
     for model in models:
@@ -80,4 +89,5 @@ def main():
     print(score)
 
 if __name__ == "__main__":
-    main()
+    for n in [1, 3, 5, 6]:
+        main(n)
