@@ -7,10 +7,11 @@ import glob
 def main(test_path, model_path='models/final.joblib'):
     
     test_X, _ = load_folder(test_path)
-    model = load(model_path) 
+    model = load(model_path)
     pred_test = model.predict(X=test_X)
 
     patients_file_path = glob.glob(f"{test_path}/*")
+    # sorting
     patients_file_path = sorted(patients_file_path, key=lambda x: int(x.split('_')[-1].split(".")[0]))
     patients_ids = [x.split("/")[1].split(".")[0] for x in patients_file_path]
 
