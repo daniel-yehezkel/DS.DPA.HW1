@@ -37,6 +37,7 @@ def load_patient(path):
 
 def load_folder(path):
       patients_file_path = glob.glob(f"{path}/*")
+      patients_file_path = sorted(patients_file_path, key=lambda x: int(x.split('_')[-1].split(".")[0]))
       patients_psr = [load_patient(p) for p in patients_file_path]
       full_data = pd.concat(patients_psr, axis=1).transpose()
       
